@@ -416,9 +416,26 @@ def revise(assignment, csp, var1, var2, constraint):
 	inferences = set([])
 	"""Question 5"""
 	"""YOUR CODE HERE"""
+	inconsistencyCounts = {}
 
-	return inferences
+	domain1 = assignment.varDomains[var1]
+	domain2 = assignment.varDomains[var2]
 
+	for otherValue in domain2:
+		remove = True
+		for value in domain1:
+			if constraint.isSatisfied(value, otherValue):
+				remove = False
+		if remove:
+			inferences.add((var2, otherValue))
+
+	if len(inferences) < len(domain2):
+		for inference in inferences:
+			#print "remove", inference[1], "from domain of", var2, domain2
+			domain2.remove(inference[1])
+		return inferences
+	else:
+		return None
 
 """
 	Implements the maintaining arc consistency algorithm.
@@ -441,7 +458,30 @@ def maintainArcConsistency(assignment, csp, var, value):
 	"""Hint: implement revise first and use it as a helper function"""
 	"""Question 5"""
 	"""YOUR CODE HERE"""
+	arcQueue = []
+	for constraint in csp.binaryConstraints:
+		if constraint.affects(var):
+			if assignment.assignedValues[constraint.otherVariable(var)] is None:
+				arcQueue.append((var, constraint.otherVariable(var)))
 
+	while len(arcQueue) > 0:
+		arcPair = arcQueue.pop(0)
+		#print "popped", arcPair, "from queue:", arcQueue
+		for constraint in csp.binaryConstraints:
+			if constraint.affects(arcPair[0]) and constraint.affects(arcPair[1]):
+				newInferences = revise(assignment, csp, arcPair[0], arcPair[1], constraint)
+				if newInferences is not None:
+					if len(newInferences) > 0:
+						inferences = inferences | newInferences
+						for constraint in csp.binaryConstraints:
+							if constraint.affects(arcPair[1]):
+								if assignment.assignedValues[constraint.otherVariable(arcPair[1])] is None:
+									arcQueue.append((arcPair[1], constraint.otherVariable(arcPair[1])))
+									#print "added", arcPair[1], constraint.otherVariable(arcPair[1]), "to queue:", arcQueue
+				else:
+					for inference in inferences:
+						assignment.varDomains[inference[0]].add(inference[1])
+					return None
 	return inferences
 
 
@@ -461,7 +501,25 @@ def AC3(assignment, csp):
 	"""Hint: implement revise first and use it as a helper function"""
 	"""Question 6"""
 	"""YOUR CODE HERE"""
+	#print assignment.varDomains
+	arcQueue = []
+	for constraint in csp.binaryConstraints:
+		arcQueue.append((constraint.var1, constraint.var2, constraint))
+		arcQueue.append((constraint.var2, constraint.var1, constraint))
 
+	while len(arcQueue) > 0:
+		arcPair = arcQueue.pop(0)
+		#print "popped", arcPair
+		newInferences = revise(assignment, csp, arcPair[0], arcPair[1], arcPair[2])
+		if newInferences is not None:
+			if len(newInferences) > 0:
+				for constraint in csp.binaryConstraints:
+					if constraint.affects(arcPair[1]):
+						if assignment.assignedValues[constraint.otherVariable(arcPair[1])] is None:
+							arcQueue.append((arcPair[1], constraint.otherVariable(arcPair[1]), constraint))
+							#print "added", arcPair[1], constraint.otherVariable(arcPair[1]), constraint
+		else:
+			return None
 	return assignment
 
 
