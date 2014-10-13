@@ -79,7 +79,7 @@ class NotEqualConstraint(BinaryConstraint):
 		return True
 
 	def __repr__(self):
-	    return 'NotEqualConstraint (%s, %s)' % (str(self.var1), str(self.var2))
+		return 'NotEqualConstraint (%s, %s)' % (str(self.var1), str(self.var2))
 
 
 class ConstraintSatisfactionProblem:
@@ -102,10 +102,10 @@ class ConstraintSatisfactionProblem:
 		self.unaryConstraints = unaryConstraints
 
 	def __repr__(self):
-	    return '---Variable Domains\n%s---Binary Constraints\n%s---Unary Constraints\n%s' % ( \
-	        ''.join([str(e) + ':' + str(self.varDomains[e]) + '\n' for e in self.varDomains]), \
-	        ''.join([str(e) + '\n' for e in self.binaryConstraints]), \
-	        ''.join([str(e) + '\n' for e in self.unaryConstraints]))
+		return '---Variable Domains\n%s---Binary Constraints\n%s---Unary Constraints\n%s' % ( \
+			''.join([str(e) + ':' + str(self.varDomains[e]) + '\n' for e in self.varDomains]), \
+			''.join([str(e) + '\n' for e in self.binaryConstraints]), \
+			''.join([str(e) + '\n' for e in self.unaryConstraints]))
 
 
 class Assignment:
@@ -161,9 +161,9 @@ class Assignment:
 		return self.assignedValues
 
 	def __repr__(self):
-	    return '---Variable Domains\n%s---Assigned Values\n%s' % ( \
-	        ''.join([str(e) + ':' + str(self.varDomains[e]) + '\n' for e in self.varDomains]), \
-	        ''.join([str(e) + ':' + str(self.assignedValues[e]) + '\n' for e in self.assignedValues]))
+		return '---Variable Domains\n%s---Assigned Values\n%s' % ( \
+			''.join([str(e) + ':' + str(self.varDomains[e]) + '\n' for e in self.varDomains]), \
+			''.join([str(e) + ':' + str(self.assignedValues[e]) + '\n' for e in self.assignedValues]))
 
 
 
@@ -188,7 +188,12 @@ class Assignment:
 def consistent(assignment, csp, var, value):
 	"""Question 1"""
 	"""YOUR CODE HERE"""
-
+	for constraint in csp.binaryConstraints:
+		if constraint.affects(var):
+			otherVar = constraint.otherVariable(var)
+			if otherVar in assignment.assignedValues:
+				if not constraint.isSatisfied(value, assignment.assignedValues[otherVar]):
+					return False
 	return True
 
 
@@ -217,6 +222,23 @@ def consistent(assignment, csp, var, value):
 def recursiveBacktracking(assignment, csp, orderValuesMethod, selectVariableMethod, inferenceMethod):
 	"""Question 1"""
 	"""YOUR CODE HERE"""
+	if assignment.isComplete():
+		return assignment
+	nextVar = selectVariableMethod(assignment, csp)
+	nextValues = orderValuesMethod(assignment, csp, nextVar)
+	for value in nextValues:
+		if consistent(assignment, csp, nextVar, value):
+			assignment.assignedValues[nextVar] = value
+			inferences = inferenceMethod(assignment, csp, nextVar, value)
+			if inferences is not None:
+				for inference in inferences:
+					assignment.varDomains[inference[0]].remove(inference[1])
+				result = recursiveBacktracking(assignment, csp, orderValuesMethod, selectVariableMethod, inferenceMethod)
+				if result is not None:
+					return result
+			for inference in inferences:
+				assignment.varDomains[inference[0]].append(inference[0])
+			assignment.assignedValues[nextVar] = None;
 	return None
 
 
