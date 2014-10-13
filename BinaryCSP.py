@@ -191,7 +191,7 @@ def consistent(assignment, csp, var, value):
 	for constraint in csp.binaryConstraints:
 		if constraint.affects(var):
 			otherVar = constraint.otherVariable(var)
-			if otherVar in assignment.assignedValues:
+			if assignment.assignedValues[otherVar] is not None:
 				if not constraint.isSatisfied(value, assignment.assignedValues[otherVar]):
 					return False
 	return True
@@ -227,18 +227,17 @@ def recursiveBacktracking(assignment, csp, orderValuesMethod, selectVariableMeth
 	nextVar = selectVariableMethod(assignment, csp)
 	nextValues = orderValuesMethod(assignment, csp, nextVar)
 	for value in nextValues:
+		inferences = set([])
 		if consistent(assignment, csp, nextVar, value):
 			assignment.assignedValues[nextVar] = value
 			inferences = inferenceMethod(assignment, csp, nextVar, value)
 			if inferences is not None:
-				for inference in inferences:
-					assignment.varDomains[inference[0]].remove(inference[1])
 				result = recursiveBacktracking(assignment, csp, orderValuesMethod, selectVariableMethod, inferenceMethod)
 				if result is not None:
 					return result
-			for inference in inferences:
-				assignment.varDomains[inference[0]].append(inference[0])
-			assignment.assignedValues[nextVar] = None;
+				for inference in inferences:
+					assignment.varDomains[inference[0]].add(inference[1])
+		assignment.assignedValues[nextVar] = None
 	return None
 
 
@@ -289,7 +288,27 @@ def minimumRemainingValuesHeuristic(assignment, csp):
 	domains = assignment.varDomains
 	"""Question 2"""
 	"""YOUR CODE HERE"""
-
+	minSize = 999999999
+	for key in domains:
+		if not assignment.isAssigned(key):
+			if len(domains[key]) < minSize: 
+				nextVar = key
+				minSize = len(domains[key])
+			elif len(domains[key]) == minSize:
+				currentConstrCount = 0
+				nextConstrCount = 0
+				for constraint in csp.unaryConstraints:
+					if constraint.affects(nextVar):
+						currentConstrCount += 1
+					if constraint.affects(key):
+						nextConstrCount += 1
+				for constraint in csp.binaryConstraints:
+					if constraint.affects(nextVar):
+						currentConstrCount += 1
+					if constraint.affects(key):
+						nextConstrCount += 1
+				if nextConstrCount > currentConstrCount:
+					nextVar = key
 	return nextVar
 
 
@@ -319,8 +338,16 @@ def leastConstrainingValuesHeuristic(assignment, csp, var):
 	"""Hint: Creating a helper function to count the number of constrained values might be useful"""
 	"""Question 3"""
 	"""YOUR CODE HERE"""
-
-	return values
+	constraintValues = dict()
+	for value in values:
+		constraintValues[value] = 0
+		for constraint in csp.binaryConstraints:
+			if constraint.affects(var):
+				otherDomain = assignment.varDomains[constraint.otherVariable(var)]
+				for otherValue in otherDomain:
+					if not constraint.isSatisfied(value, otherValue):
+						constraintValues[value] += 1
+	return sorted(values, key=lambda value: constraintValues[value])
 
 
 """
@@ -351,7 +378,19 @@ def forwardChecking(assignment, csp, var, value):
 	domains = assignment.varDomains
 	"""Question 4"""
 	"""YOUR CODE HERE"""
-
+	for constraint in csp.binaryConstraints:
+		if constraint.affects(var):
+			otherVar = constraint.otherVariable(var)
+			otherDomain = domains[otherVar]
+			removalTargets = []
+			for otherValue in otherDomain:
+				if not constraint.isSatisfied(value, otherValue):
+					removalTargets.append(otherValue)
+					inferences.add((otherVar, otherValue))
+			if len(otherDomain) == len(removalTargets):
+				return None
+	for inference in inferences:
+		domains[inference[0]].remove(inference[1])	
 	return inferences
 
 
