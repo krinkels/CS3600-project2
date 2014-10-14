@@ -1,0 +1,22 @@
+A A B C D E
+B A B C D E
+C A B C D E
+D A B C D E
+E A B C D E
+0
+AdjacentConstraint A C
+NotAdjacentConstraint A B
+NotAdjacentConstraint A E
+NotAdjacentConstraint B D
+NotEqualConstraint A B
+NotEqualConstraint A C
+NotEqualConstraint A D
+NotEqualConstraint A E
+NotEqualConstraint B C
+NotEqualConstraint B D
+NotEqualConstraint B E
+NotEqualConstraint C D
+NotEqualConstraint C E
+NotEqualConstraint D E
+0
+GoodValueConstraint A C
