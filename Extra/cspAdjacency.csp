@@ -12,7 +12,7 @@ NotAdjacentConstraint A E
 NotEqualConstraint A F
 NotEqualConstraint B C
 NotAdjacentConstraint B D
-NotEqualConstraint B E
+NotAdjacentConstraint B E
 NotEqualConstraint B F
 NotEqualConstraint C D
 NotEqualConstraint C E
